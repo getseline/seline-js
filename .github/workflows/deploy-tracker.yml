@@ -1,0 +1,33 @@
+name: Deploy Tracker
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - seline-tracker/**
+
+jobs:
+  deployment:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v1
+
+      - name: Build script
+        working-directory: ./seline-tracker
+        run: bunx esbuild ./index.js --bundle --minify --outdir=dist
+
+      - name: Upload script
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          workingDirectory: "seline-tracker"
+          command: r2 object put script/seline.js --file=dist/index.js
+
+      - name: Reset cache
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: bun ./scripts/reset-cdn-cache.js

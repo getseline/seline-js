@@ -1,0 +1,15 @@
+{
+  "name": "seline-js",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "lint": "biome lint --write .",
+    "format": "biome format --write .",
+    "build": "pnpm -r build",
+    "publish": "pnpm -r publish --access public --filter '@seline-analytics/*'"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.8.1",
+    "@changesets/cli": "^2.27.5"
+  }
+}

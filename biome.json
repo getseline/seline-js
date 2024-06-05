@@ -1,0 +1,15 @@
+{
+  "files": {
+    "ignore": ["dist/**/*"]
+  },
+  "organizeImports": {
+    "enabled": true
+  },
+  "linter": {
+    "enabled": true
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "name": "@seline-analytics/node",
+  "version": "0.0.1",
+  "description": "",
+  "author": "",
+  "license": "MIT",
+  "repository": "getseline/seline-js",
+  "keywords": ["seline", "analytics"],
+  "files": ["dist"],
+  "type": "module",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    "import": "./dist/index.js",
+    "require": "./dist/index.cjs",
+    "types": "./dist/index.d.ts",
+    "default": "./dist/index.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsup index.ts --minify --format esm,cjs --dts"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.2",
+    "tsup": "^8.0.2",
+    "typescript": "^5.4.5"
+  }
+}
