@@ -30,7 +30,7 @@ let inited = false;
 
 const beforeInitQueue: QueueEvent[] = [];
 
-export function init(initOptions: SelineOptions) {
+export function init(initOptions: SelineOptions = {}) {
   if (!isBrowser || inited) return;
 
   options.token = initOptions.token;
