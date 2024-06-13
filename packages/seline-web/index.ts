@@ -64,6 +64,9 @@ export function init(initOptions: SelineOptions = {}) {
 
 function send(url: string, data: Record<string, unknown>): void {
   try {
+    const payload = data;
+    if (userData.userId) payload.visitorId = userData.userId;
+
     navigator.sendBeacon(url, JSON.stringify(data));
   } catch (error) {
     console.error(error);

@@ -30,11 +30,14 @@ declare global {
 export function Seline(options: SelineOptions) {
   const token = options.token;
   const apiHost = options.apiHost ?? "https://api.seline.so";
-  let userData = {};
+  let userData: SelineUserData = {};
 
   function send(url: string, data: Record<string, unknown>): void {
     try {
-      navigator.sendBeacon(url, JSON.stringify(data));
+      const payload = data;
+      if (userData.userId) payload.visitorId = userData.userId;
+
+      navigator.sendBeacon(url, JSON.stringify(payload));
     } catch (error) {
       console.error(error);
     }
