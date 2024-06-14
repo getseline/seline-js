@@ -1,92 +1,128 @@
 type SelineOptions = {
-  token?: string | null;
-  apiHost?: string | null;
+	token?: string | null;
+	apiHost?: string | null;
+	autoPageView?: boolean | null;
+	maskPatterns?: string[] | null;
+	skipPatterns?: string[] | null;
 };
 
 type SelineCustomEvent = {
-  name: string;
-  data?: Record<string, unknown> | null;
+	name: string;
+	data?: Record<string, unknown> | null;
 };
 
 type SelinePageViewEvent = {
-  pathname: string;
-  referrer?: string | null;
+	pathname: string;
+	referrer?: string | null;
 };
 
 type SelineUserData = Record<string, unknown>;
 
 export type Seline = {
-  track: (name: string, data?: Record<string, unknown> | null) => void;
-  page: () => void;
-  setUser: (data: SelineUserData) => void;
+	track: (name: string, data?: Record<string, unknown> | null) => void;
+	page: () => void;
+	setUser: (data: SelineUserData) => void;
 };
 
 declare global {
-  interface Window {
-    seline: Seline;
-  }
+	interface Window {
+		seline: Seline;
+	}
 }
 
 export function Seline(options: SelineOptions) {
-  const token = options.token;
-  const apiHost = options.apiHost ?? "https://api.seline.so";
-  let userData: SelineUserData = {};
+	const token = options.token;
+	const apiHost = options.apiHost ?? "https://api.seline.so";
+	const maskPatterns = options.maskPatterns ?? [];
+	const skipPatterns = options.skipPatterns ?? [];
+	let userData: SelineUserData = {};
 
-  function send(url: string, data: Record<string, unknown>): void {
-    try {
-      const payload = data;
-      if (userData.userId) payload.visitorId = userData.userId;
+	function processPathname(pathname: string): string | null {
+		const regexSkipPatterns = skipPatterns.map(
+			(pattern) => new RegExp(`^${pattern.replace(/\*/g, "[^/]+")}$`),
+		);
+		const regexMaskPatterns = maskPatterns.map(
+			(pattern) => new RegExp(`^${pattern.replace(/\*/g, "[^/]+")}$`),
+		);
 
-      navigator.sendBeacon(url, JSON.stringify(payload));
-    } catch (error) {
-      console.error(error);
-    }
-  }
+		if (regexSkipPatterns.some((regex) => regex.test(pathname))) {
+			return null;
+		}
 
-  function createEvent(event: SelineCustomEvent | SelinePageViewEvent): void {
-    send(`${apiHost}/s/e`, { token, ...event });
-  }
+		for (let i = 0; i < maskPatterns.length; i++) {
+			if (regexMaskPatterns[i].test(pathname)) {
+				return maskPatterns[i];
+			}
+		}
+		return pathname;
+	}
 
-  function track(name: string, data?: Record<string, unknown> | null): void {
-    createEvent({ name, data });
-  }
+	function send(url: string, data: Record<string, unknown>): void {
+		try {
+			const payload = data;
+			if (userData.userId) payload.visitorId = userData.userId;
 
-  function page() {
-    let referrer: string | null = document.referrer;
+			navigator.sendBeacon(url, JSON.stringify(payload));
+		} catch (error) {
+			console.error(error);
+		}
+	}
 
-    if (!referrer || referrer.includes(location.hostname)) {
-      referrer = null;
-    }
+	function createEvent(event: SelineCustomEvent | SelinePageViewEvent): void {
+		send(`${apiHost}/s/e`, { token, ...event });
+	}
 
-    createEvent({
-      pathname: window.location.pathname + window.location.search,
-      referrer,
-    });
-  }
+	function track(name: string, data?: Record<string, unknown> | null): void {
+		createEvent({ name, data });
+	}
 
-  function setUser(data: SelineUserData) {
-    userData = { ...userData, ...data };
-    send(`${apiHost}/s/su`, { token, ...userData });
-  }
+	function page() {
+		let referrer: string | null = document.referrer;
+		const pathname = processPathname(window.location.pathname);
+		if (!pathname) return;
 
-  return {
-    track,
-    page,
-    setUser,
-  };
+		if (!referrer || referrer.includes(location.hostname)) {
+			referrer = null;
+		}
+
+		createEvent({
+			pathname: pathname + window.location.search,
+			referrer,
+		});
+	}
+
+	function setUser(data: SelineUserData) {
+		userData = { ...userData, ...data };
+		send(`${apiHost}/s/su`, { token, ...userData });
+	}
+
+	return {
+		track,
+		page,
+		setUser,
+	};
 }
 
-const token = document.currentScript?.getAttribute("data-seline-token");
+const token = document.currentScript?.getAttribute("data-token");
+const skipPatterns =
+	document.currentScript?.getAttribute("data-skip-patterns")?.split(",") || [];
+const maskPatterns =
+	document.currentScript?.getAttribute("data-mask-patterns")?.split(",") || [];
+const autoPageView =
+	document.currentScript?.getAttribute("data-auto-page-view") !== "false" ??
+	true;
 
-const seline = Seline({ token });
+const seline = Seline({ token, skipPatterns, maskPatterns, autoPageView });
 window.seline = seline;
 
-const pushState = history.pushState;
-history.pushState = function (...args) {
-  pushState.apply(this, args);
-  seline.page();
-};
+if (autoPageView) {
+	const pushState = history.pushState;
+	history.pushState = function (...args) {
+		pushState.apply(this, args);
+		seline.page();
+	};
 
-addEventListener("popstate", seline.page);
+	addEventListener("popstate", seline.page);
 
-seline.page();
+	seline.page();
+}
