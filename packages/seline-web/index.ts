@@ -1,19 +1,19 @@
 type SelineOptions = {
-	token?: string | null;
-	apiHost?: string | null;
-	autoPageView?: boolean | null;
-	skipPatterns?: string[];
-	maskPatterns?: string[];
+  token?: string | null;
+  apiHost?: string | null;
+  autoPageView?: boolean | null;
+  skipPatterns?: string[];
+  maskPatterns?: string[];
 };
 
 type SelineCustomEvent = {
-	name: string;
-	data?: Record<string, unknown> | null;
+  name: string;
+  data?: Record<string, unknown> | null;
 };
 
 type SelinePageViewEvent = {
-	pathname: string;
-	referrer?: string | null;
+  pathname: string;
+  referrer?: string | null;
 };
 
 type SelineUserData = Record<string, unknown>;
@@ -25,130 +25,130 @@ let userData: SelineUserData = {};
 const options: SelineOptions = {};
 
 type QueueEvent =
-	| { name: "event"; args: SelineCustomEvent | SelinePageViewEvent }
-	| { name: "user"; args: SelineUserData };
+  | { name: "event"; args: SelineCustomEvent | SelinePageViewEvent }
+  | { name: "user"; args: SelineUserData };
 
 let inited = false;
 
 const beforeInitQueue: QueueEvent[] = [];
 
 function processPathname(
-	pathname: string,
-	maskPatterns: string[],
-	skipPatterns: string[],
+  pathname: string,
+  maskPatterns: string[],
+  skipPatterns: string[],
 ): string | null | undefined {
-	const regexSkipPatterns = skipPatterns.map(
-		(pattern) => new RegExp(`^${pattern.replace(/\*/g, "[^/]+")}$`),
-	);
-	const regexMaskPatterns = maskPatterns.map(
-		(pattern) => new RegExp(`^${pattern.replace(/\*/g, "[^/]+")}$`),
-	);
+  const regexSkipPatterns = skipPatterns.map(
+    (pattern) => new RegExp(`^${pattern.replace(/\*/g, "[^/]+")}$`),
+  );
+  const regexMaskPatterns = maskPatterns.map(
+    (pattern) => new RegExp(`^${pattern.replace(/\*/g, "[^/]+")}$`),
+  );
 
-	if (regexSkipPatterns.some((regex) => regex.test(pathname))) {
-		return null;
-	}
+  if (regexSkipPatterns.some((regex) => regex.test(pathname))) {
+    return null;
+  }
 
-	for (let i = 0; i < maskPatterns.length; i++) {
-		if (regexMaskPatterns[i]?.test(pathname)) {
-			return maskPatterns[i];
-		}
-	}
-	return pathname;
+  for (let i = 0; i < maskPatterns.length; i++) {
+    if (regexMaskPatterns[i]?.test(pathname)) {
+      return maskPatterns[i];
+    }
+  }
+  return pathname;
 }
 
 export function init(initOptions: SelineOptions = {}) {
-	if (!isBrowser || inited) return;
+  if (!isBrowser || inited) return;
 
-	options.token = initOptions.token;
-	options.apiHost = initOptions.apiHost ?? "https://api.seline.so";
-	options.autoPageView = initOptions.autoPageView ?? true;
-	options.skipPatterns = initOptions.skipPatterns ?? [];
-	options.maskPatterns = initOptions.maskPatterns ?? [];
+  options.token = initOptions.token;
+  options.apiHost = initOptions.apiHost ?? "https://api.seline.so";
+  options.autoPageView = initOptions.autoPageView ?? true;
+  options.skipPatterns = initOptions.skipPatterns ?? [];
+  options.maskPatterns = initOptions.maskPatterns ?? [];
 
-	if (options.autoPageView) {
-		const pushState = history.pushState;
-		history.pushState = function (...args) {
-			pushState.apply(this, args);
-			page();
-		};
+  inited = true;
 
-		addEventListener("popstate", page);
+  if (beforeInitQueue.length > 0) {
+    for (const { name, args } of beforeInitQueue) {
+      if (name === "event") {
+        createEvent(args);
+      } else if (name === "user") {
+        setUser(args);
+      }
+    }
+  }
 
-		page();
-	}
+  if (options.autoPageView) {
+    const pushState = history.pushState;
+    history.pushState = function (...args) {
+      pushState.apply(this, args);
+      page();
+    };
 
-	inited = true;
+    addEventListener("popstate", page);
 
-	if (beforeInitQueue.length > 0) {
-		for (const { name, args } of beforeInitQueue) {
-			if (name === "event") {
-				createEvent(args);
-			} else if (name === "user") {
-				setUser(args);
-			}
-		}
-	}
+    page();
+  }
 }
 
 function send(url: string, data: Record<string, unknown>): void {
-	try {
-		const payload = data;
-		if (userData.userId) payload.visitorId = userData.userId;
+  try {
+    const payload = data;
+    if (userData.userId) payload.visitorId = userData.userId;
 
-		navigator.sendBeacon(url, JSON.stringify(data));
-	} catch (error) {
-		console.error(error);
-	}
+    navigator.sendBeacon(url, JSON.stringify(data));
+  } catch (error) {
+    console.error(error);
+  }
 }
 
 function createEvent(event: SelineCustomEvent | SelinePageViewEvent): void {
-	send(`${options.apiHost}/s/e`, { token: options.token, ...event });
+  send(`${options.apiHost}/s/e`, { token: options.token, ...event });
 }
 
 export function track(
-	name: string,
-	data?: Record<string, unknown> | null,
+  name: string,
+  data?: Record<string, unknown> | null,
 ): void {
-	if (!inited) {
-		beforeInitQueue.push({ name: "event", args: { name, data } });
-		return;
-	}
-	createEvent({ name, data });
+  if (!inited) {
+    beforeInitQueue.push({ name: "event", args: { name, data } });
+    return;
+  }
+  createEvent({ name, data });
 }
 
 export function page() {
-	let referrer: string | null = document.referrer;
-	const pathname = processPathname(
-		window.location.pathname,
-		options.maskPatterns ?? [],
-		options.skipPatterns ?? [],
-	);
-	if (!pathname) return;
+  let referrer: string | null = document.referrer;
+  const pathname = processPathname(
+    window.location.pathname,
+    options.maskPatterns ?? [],
+    options.skipPatterns ?? [],
+  );
+  if (!pathname) return;
 
-	if (!referrer || referrer.includes(location.hostname)) {
-		referrer = null;
-	}
+  if (!referrer || referrer.includes(location.hostname)) {
+    referrer = null;
+  }
 
-	const args = {
-		pathname: window.location.pathname + window.location.search,
-		referrer,
-	};
+  const args = {
+    pathname: window.location.pathname + window.location.search,
+    referrer,
+  };
 
-	if (!inited) {
-		beforeInitQueue.push({ name: "event", args });
-		return;
-	}
+  if (!inited) {
+    beforeInitQueue.push({ name: "event", args });
+    return;
+  }
 
-	createEvent(args);
+  createEvent(args);
 }
 
 export function setUser(data: SelineUserData) {
-	userData = { ...userData, ...data };
+  userData = { ...userData, ...data };
 
-	if (!inited) {
-		beforeInitQueue.push({ name: "user", args: userData });
-		return;
-	}
+  if (!inited) {
+    beforeInitQueue.push({ name: "user", args: userData });
+    return;
+  }
 
-	send(`${options.apiHost}/s/su`, { token: options.token, fields: userData });
+  send(`${options.apiHost}/s/su`, { token: options.token, fields: userData });
 }

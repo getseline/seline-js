@@ -1,5 +1,11 @@
 # @seline-analytics/web
 
+## 0.0.5
+
+### Patch Changes
+
+- Update queued events to go before first page view
+
 ## 0.0.4
 
 ### Patch Changes
