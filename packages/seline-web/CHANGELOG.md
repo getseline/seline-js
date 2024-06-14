@@ -1,5 +1,11 @@
 # @seline-analytics/web
 
+## 0.0.6
+
+### Patch Changes
+
+- Fix pathname
+
 ## 0.0.5
 
 ### Patch Changes
