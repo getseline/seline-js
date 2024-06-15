@@ -1,5 +1,11 @@
 # @seline-analytics/web
 
+## 0.0.7
+
+### Patch Changes
+
+- Update page() to skip tracking the same page twice
+
 ## 0.0.6
 
 ### Patch Changes

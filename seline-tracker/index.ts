@@ -36,6 +36,7 @@ export function Seline(options: SelineOptions) {
 	const maskPatterns = options.maskPatterns ?? [];
 	const skipPatterns = options.skipPatterns ?? [];
 	let userData: SelineUserData = {};
+	let lastPage: string | null = null;
 
 	function processPathname(pathname: string): string | null {
 		const regexSkipPatterns = skipPatterns.map(
@@ -77,6 +78,9 @@ export function Seline(options: SelineOptions) {
 	}
 
 	function page() {
+		if (lastPage === window.location.pathname) return;
+		lastPage = window.location.pathname;
+
 		let referrer: string | null = document.referrer;
 		const pathname = processPathname(window.location.pathname);
 		if (!pathname) return;
