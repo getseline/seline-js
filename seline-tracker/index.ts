@@ -63,7 +63,14 @@ export function Seline(options: SelineOptions) {
 			const payload = data;
 			if (userData.userId) payload.visitorId = userData.userId;
 
-			navigator.sendBeacon(url, JSON.stringify(payload));
+			if (!navigator?.sendBeacon(url, JSON.stringify(payload))) {
+				fetch(url, {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify(payload),
+					keepalive: true,
+				});
+			}
 		} catch (error) {
 			console.error(error);
 		}
