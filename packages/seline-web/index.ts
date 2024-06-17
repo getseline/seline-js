@@ -91,6 +91,21 @@ export function init(initOptions: SelineOptions = {}) {
   }
 }
 
+export function enableAutoPageView() {
+  if (options.autoPageView) return;
+  options.autoPageView = true;
+
+  const pushState = history.pushState;
+  history.pushState = function (...args) {
+    pushState.apply(this, args);
+    page();
+  };
+
+  addEventListener("popstate", page);
+
+  page();
+}
+
 function send(url: string, data: Record<string, unknown>): void {
   try {
     const payload = data;
