@@ -1,5 +1,11 @@
 # @seline-analytics/web
 
+## 0.0.8
+
+### Patch Changes
+
+- Add fetch as a fallback
+
 ## 0.0.7
 
 ### Patch Changes
