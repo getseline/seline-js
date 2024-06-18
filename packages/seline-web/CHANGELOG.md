@@ -1,5 +1,11 @@
 # @seline-analytics/web
 
+## 0.0.11
+
+### Patch Changes
+
+- Fix registerListeners for server-side
+
 ## 0.0.10
 
 ### Patch Changes
