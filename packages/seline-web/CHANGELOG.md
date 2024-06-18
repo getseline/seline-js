@@ -1,5 +1,11 @@
 # @seline-analytics/web
 
+## 0.0.12
+
+### Patch Changes
+
+- Fix document.referrer for SSR
+
 ## 0.0.11
 
 ### Patch Changes

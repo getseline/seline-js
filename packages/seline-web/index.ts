@@ -21,7 +21,7 @@ type SelineUserData = Record<string, unknown>;
 const isBrowser = typeof window !== "undefined";
 
 let userData: SelineUserData = {};
-let referrer: string | null = document.referrer;
+let referrer: string | null = null;
 
 const options: SelineOptions = {};
 
@@ -68,6 +68,7 @@ export function init(initOptions: SelineOptions = {}) {
   options.maskPatterns = initOptions.maskPatterns ?? [];
 
   inited = true;
+  referrer = document.referrer;
 
   if (beforeInitQueue.length > 0) {
     for (const { name, args } of beforeInitQueue) {
