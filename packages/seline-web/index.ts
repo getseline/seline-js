@@ -21,6 +21,7 @@ type SelineUserData = Record<string, unknown>;
 const isBrowser = typeof window !== "undefined";
 
 let userData: SelineUserData = {};
+let referrer: string | null = document.referrer;
 
 const options: SelineOptions = {};
 
@@ -143,7 +144,6 @@ export function page() {
   if (lastPage === window.location.pathname) return;
   lastPage = window.location.pathname;
 
-  let referrer: string | null = document.referrer;
   const pathname = processPathname(
     window.location.pathname,
     options.maskPatterns ?? [],
@@ -166,6 +166,8 @@ export function page() {
   }
 
   createEvent(args);
+
+  if (referrer) referrer = null;
 }
 
 export function setUser(data: SelineUserData) {
