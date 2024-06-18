@@ -40,10 +40,7 @@ export function Seline(options: SelineOptions) {
 	let lastPage: string | null = null;
 	let referrer: string | null = document.referrer;
 
-	function enableAutoPageView() {
-		if (options.autoPageView) return;
-		options.autoPageView = true;
-
+	function registerListeners() {
 		const pushState = history.pushState;
 		history.pushState = function (...args) {
 			pushState.apply(this, args);
@@ -52,7 +49,24 @@ export function Seline(options: SelineOptions) {
 
 		addEventListener("popstate", page);
 
-		page();
+		function onVisibilityChange() {
+			if (!lastPage && document.visibilityState === "visible") {
+				page();
+			}
+		}
+
+		if (document.visibilityState !== "visible") {
+			document.addEventListener("visibilitychange", onVisibilityChange);
+		} else {
+			page();
+		}
+	}
+
+	function enableAutoPageView(_initial = false) {
+		if (options.autoPageView && !_initial) return;
+		options.autoPageView = true;
+
+		registerListeners();
 	}
 
 	function processPathname(pathname: string): string | null {
@@ -145,14 +159,4 @@ const autoPageView =
 const seline = Seline({ token, skipPatterns, maskPatterns, autoPageView });
 window.seline = seline;
 
-if (autoPageView) {
-	const pushState = history.pushState;
-	history.pushState = function (...args) {
-		pushState.apply(this, args);
-		seline.page();
-	};
-
-	addEventListener("popstate", seline.page);
-
-	seline.page();
-}
+if (autoPageView) seline.enableAutoPageView(true);
