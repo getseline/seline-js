@@ -155,8 +155,9 @@ const maskPatterns =
 const autoPageView =
 	document.currentScript?.getAttribute("data-auto-page-view") !== "false" ??
 	true;
+const apiHost = document.currentScript?.getAttribute("data-api-host");
 
-const seline = Seline({ token, skipPatterns, maskPatterns, autoPageView });
+const seline = Seline({ token, skipPatterns, maskPatterns, autoPageView, apiHost });
 window.seline = seline;
 
 if (autoPageView) seline.enableAutoPageView(true);
