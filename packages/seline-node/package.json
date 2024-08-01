@@ -1,12 +1,17 @@
 {
   "name": "@seline-analytics/node",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "",
   "author": "",
   "license": "MIT",
   "repository": "getseline/seline-js",
-  "keywords": ["seline", "analytics"],
-  "files": ["dist"],
+  "keywords": [
+    "seline",
+    "analytics"
+  ],
+  "files": [
+    "dist"
+  ],
   "type": "module",
   "main": "dist/index.cjs",
   "module": "dist/index.js",
