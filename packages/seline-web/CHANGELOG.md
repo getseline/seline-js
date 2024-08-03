@@ -1,5 +1,11 @@
 # @seline-analytics/web
 
+## 0.0.13
+
+### Patch Changes
+
+- Set session storage line if referrer was sent
+
 ## 0.0.12
 
 ### Patch Changes

@@ -68,7 +68,9 @@ export function init(initOptions: SelineOptions = {}) {
   options.maskPatterns = initOptions.maskPatterns ?? [];
 
   inited = true;
-  referrer = document.referrer;
+
+  const referrerSent = sessionStorage.getItem("seline:referrer");
+  referrer = referrerSent ? "" : document.referrer;
 
   if (beforeInitQueue.length > 0) {
     for (const { name, args } of beforeInitQueue) {
@@ -175,7 +177,10 @@ export function page() {
 
   createEvent(args);
 
-  if (referrer) referrer = null;
+  if (referrer) {
+    referrer = null;
+    sessionStorage.setItem("seline:referrer", "set");
+  }
 }
 
 export function setUser(data: SelineUserData) {
