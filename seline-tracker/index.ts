@@ -61,6 +61,8 @@ export function Seline(options: SelineOptions) {
     } else {
       page();
     }
+
+    registerCustomEventListeners();
   }
 
   function enableAutoPageView(_initial = false) {
@@ -141,6 +143,52 @@ export function Seline(options: SelineOptions) {
   function setUser(data: SelineUserData) {
     userData = { ...userData, ...data };
     send(`${apiHost}/s/su`, { token, ...userData });
+  }
+
+  function registerCustomEventListeners() {
+    document.addEventListener("click", (event) => {
+      let targetElement = event.target as HTMLElement | null;
+
+      if (
+        !targetElement ||
+        ((targetElement.tagName === "INPUT" ||
+          targetElement.tagName === "SELECT" ||
+          targetElement.tagName === "TEXTAREA") &&
+          // @ts-ignore
+          targetElement.type !== "submit")
+      ) {
+        return;
+      }
+
+      while (targetElement && !targetElement?.hasAttribute("data-sln-event")) {
+        targetElement = targetElement.parentElement;
+      }
+
+      if (!targetElement) return;
+
+      const eventName = targetElement.getAttribute("data-sln-event");
+      if (!eventName) return;
+
+      const eventData = {};
+
+      for (const attr of Array.from(targetElement.attributes)) {
+        if (attr.name.startsWith("data-sln-event-") && attr.value) {
+          eventData[attr.name.slice("data-sln-event-".length)] = attr.value;
+        }
+      }
+
+      if (targetElement.tagName === "FORM") {
+        const form = targetElement as HTMLFormElement;
+        const inputs = Array.from(form.elements) as HTMLInputElement[];
+        for (const input of inputs) {
+          if (input.type !== "password" && input.name && input.value) {
+            eventData[input.name] = input.value;
+          }
+        }
+      }
+
+      track(eventName, eventData);
+    });
   }
 
   return {
