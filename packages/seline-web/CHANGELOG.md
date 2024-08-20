@@ -1,5 +1,11 @@
 # @seline-analytics/web
 
+## 0.0.15
+
+### Patch Changes
+
+- Add custom events by data attributes
+
 ## 0.0.14
 
 ### Patch Changes
