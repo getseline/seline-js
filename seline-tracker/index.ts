@@ -142,7 +142,7 @@ export function Seline(options: SelineOptions) {
 
   function setUser(data: SelineUserData) {
     userData = { ...userData, ...data };
-    send(`${apiHost}/s/su`, { token, ...userData });
+    send(`${apiHost}/s/su`, { token, fields: userData });
   }
 
   function registerCustomEventListeners() {
