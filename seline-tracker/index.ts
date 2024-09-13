@@ -23,6 +23,7 @@ export type Seline = {
   page: () => void;
   setUser: (data: SelineUserData) => void;
   enableAutoPageView: () => void;
+  doNotTrack: () => void;
 };
 
 declare global {
@@ -40,6 +41,14 @@ export function Seline(options: SelineOptions) {
   let lastPage: string | null = null;
   const referrerSent = sessionStorage.getItem("seline:referrer");
   let referrer: string | null = referrerSent ? "" : document.referrer;
+
+  function isTrackingDisabled(): boolean {
+    return localStorage.getItem("seline-do-not-track") === "1";
+  }
+
+  function doNotTrack(): void {
+    localStorage.setItem("seline-do-not-track", "1");
+  }
 
   function registerListeners() {
     const pushState = history.pushState;
@@ -93,6 +102,8 @@ export function Seline(options: SelineOptions) {
   }
 
   function send(url: string, data: Record<string, unknown>): void {
+    if (isTrackingDisabled()) return;
+
     try {
       const payload = data;
       if (userData.userId) payload.visitorId = userData.userId;
@@ -196,6 +207,7 @@ export function Seline(options: SelineOptions) {
     page,
     setUser,
     enableAutoPageView,
+    doNotTrack,
   };
 }
 
