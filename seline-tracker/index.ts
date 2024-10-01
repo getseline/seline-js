@@ -1,231 +1,235 @@
 type SelineOptions = {
-  token?: string | null;
-  apiHost?: string | null;
-  autoPageView?: boolean | null;
-  maskPatterns?: string[] | null;
-  skipPatterns?: string[] | null;
+	token?: string | null;
+	apiHost?: string | null;
+	autoPageView?: boolean | null;
+	maskPatterns?: string[] | null;
+	skipPatterns?: string[] | null;
 };
 
 type SelineCustomEvent = {
-  name: string;
-  data?: Record<string, unknown> | null;
+	name: string;
+	pathname: string;
+	data?: Record<string, unknown> | null;
 };
 
 type SelinePageViewEvent = {
-  pathname: string;
-  referrer?: string | null;
+	pathname: string;
+	referrer?: string | null;
 };
 
 type SelineUserData = Record<string, unknown>;
 
 export type Seline = {
-  track: (name: string, data?: Record<string, unknown> | null) => void;
-  page: () => void;
-  setUser: (data: SelineUserData) => void;
-  enableAutoPageView: () => void;
-  doNotTrack: () => void;
+	track: (name: string, data?: Record<string, unknown> | null) => void;
+	page: () => void;
+	setUser: (data: SelineUserData) => void;
+	enableAutoPageView: () => void;
+	doNotTrack: () => void;
 };
 
 declare global {
-  interface Window {
-    seline: Seline;
-  }
+	interface Window {
+		seline: Seline;
+	}
 }
 
 export function Seline(options: SelineOptions) {
-  const token = options.token;
-  const apiHost = options.apiHost ?? "https://api.seline.so";
-  const maskPatterns = options.maskPatterns ?? [];
-  const skipPatterns = options.skipPatterns ?? [];
-  let userData: SelineUserData = {};
-  let lastPage: string | null = null;
-  const referrerSent = sessionStorage.getItem("seline:referrer");
-  let referrer: string | null = referrerSent ? "" : document.referrer;
+	const token = options.token;
+	const apiHost = options.apiHost ?? "https://api.seline.so";
+	const maskPatterns = options.maskPatterns ?? [];
+	const skipPatterns = options.skipPatterns ?? [];
+	let userData: SelineUserData = {};
+	let lastPage: string | null = null;
+	const referrerSent = sessionStorage.getItem("seline:referrer");
+	let referrer: string | null = referrerSent ? "" : document.referrer;
 
-  function isTrackingDisabled(): boolean {
-    return localStorage.getItem("seline-do-not-track") === "1";
-  }
+	function isTrackingDisabled(): boolean {
+		return localStorage.getItem("seline-do-not-track") === "1";
+	}
 
-  function doNotTrack(): void {
-    localStorage.setItem("seline-do-not-track", "1");
-  }
+	function doNotTrack(): void {
+		localStorage.setItem("seline-do-not-track", "1");
+	}
 
-  function registerListeners() {
-    const pushState = history.pushState;
-    history.pushState = function (...args) {
-      pushState.apply(this, args);
-      page();
-    };
+	function registerListeners() {
+		const pushState = history.pushState;
+		history.pushState = function (...args) {
+			pushState.apply(this, args);
+			page();
+		};
 
-    addEventListener("popstate", page);
+		addEventListener("popstate", page);
 
-    function onVisibilityChange() {
-      if (!lastPage && document.visibilityState === "visible") {
-        page();
-      }
-    }
+		function onVisibilityChange() {
+			if (!lastPage && document.visibilityState === "visible") {
+				page();
+			}
+		}
 
-    if (document.visibilityState !== "visible") {
-      document.addEventListener("visibilitychange", onVisibilityChange);
-    } else {
-      page();
-    }
+		if (document.visibilityState !== "visible") {
+			document.addEventListener("visibilitychange", onVisibilityChange);
+		} else {
+			page();
+		}
 
-    registerCustomEventListeners();
-  }
+		registerCustomEventListeners();
+	}
 
-  function enableAutoPageView(_initial = false) {
-    if (options.autoPageView && !_initial) return;
-    options.autoPageView = true;
+	function enableAutoPageView(_initial = false) {
+		if (options.autoPageView && !_initial) return;
+		options.autoPageView = true;
 
-    registerListeners();
-  }
+		registerListeners();
+	}
 
-  function processPathname(pathname: string): string | null {
-    const regexSkipPatterns = skipPatterns.map(
-      (pattern) => new RegExp(`^${pattern.replace(/\*/g, "[^/]+")}$`),
-    );
-    const regexMaskPatterns = maskPatterns.map(
-      (pattern) => new RegExp(`^${pattern.replace(/\*/g, "[^/]+")}$`),
-    );
+	function processPathname(pathname: string): string | null {
+		const regexSkipPatterns = skipPatterns.map(
+			(pattern) => new RegExp(`^${pattern.replace(/\*/g, "[^/]+")}$`),
+		);
+		const regexMaskPatterns = maskPatterns.map(
+			(pattern) => new RegExp(`^${pattern.replace(/\*/g, "[^/]+")}$`),
+		);
 
-    if (regexSkipPatterns.some((regex) => regex.test(pathname))) {
-      return null;
-    }
+		if (regexSkipPatterns.some((regex) => regex.test(pathname))) {
+			return null;
+		}
 
-    for (let i = 0; i < maskPatterns.length; i++) {
-      if (regexMaskPatterns[i].test(pathname)) {
-        return maskPatterns[i];
-      }
-    }
-    return pathname;
-  }
+		for (let i = 0; i < maskPatterns.length; i++) {
+			if (regexMaskPatterns[i].test(pathname)) {
+				return maskPatterns[i];
+			}
+		}
+		return pathname;
+	}
 
-  function send(url: string, data: Record<string, unknown>): void {
-    if (isTrackingDisabled()) return;
+	function send(url: string, data: Record<string, unknown>): void {
+		if (isTrackingDisabled()) return;
 
-    try {
-      const payload = data;
-      if (userData.userId) payload.visitorId = userData.userId;
+		try {
+			const payload = data;
+			if (userData.userId) payload.visitorId = userData.userId;
 
-      if (!navigator?.sendBeacon(url, JSON.stringify(payload))) {
-        fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-          keepalive: true,
-        });
-      }
-    } catch (error) {
-      console.error(error);
-    }
-  }
+			if (!navigator?.sendBeacon(url, JSON.stringify(payload))) {
+				fetch(url, {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify(payload),
+					keepalive: true,
+				});
+			}
+		} catch (error) {
+			console.error(error);
+		}
+	}
 
-  function createEvent(event: SelineCustomEvent | SelinePageViewEvent): void {
-    send(`${apiHost}/s/e`, { token, ...event });
-  }
+	function createEvent(event: SelineCustomEvent | SelinePageViewEvent): void {
+		send(`${apiHost}/s/e`, { token, ...event });
+	}
 
-  function track(name: string, data?: Record<string, unknown> | null): void {
-    createEvent({ name, data });
-  }
+	function track(name: string, data?: Record<string, unknown> | null): void {
+		const pathname = processPathname(window.location.pathname);
+		if (!pathname) return;
 
-  function page() {
-    if (lastPage === window.location.pathname) return;
-    lastPage = window.location.pathname;
+		createEvent({ pathname: pathname + window.location.search, name, data });
+	}
 
-    const pathname = processPathname(window.location.pathname);
-    if (!pathname) return;
+	function page() {
+		if (lastPage === window.location.pathname) return;
+		lastPage = window.location.pathname;
 
-    if (!referrer || referrer.includes(location.hostname)) {
-      referrer = null;
-    }
+		const pathname = processPathname(window.location.pathname);
+		if (!pathname) return;
 
-    createEvent({
-      pathname: pathname + window.location.search,
-      referrer,
-    });
+		if (!referrer || referrer.includes(location.hostname)) {
+			referrer = null;
+		}
 
-    if (referrer) {
-      referrer = null;
-      sessionStorage.setItem("seline:referrer", "set");
-    }
-  }
+		createEvent({
+			pathname: pathname + window.location.search,
+			referrer,
+		});
 
-  function setUser(data: SelineUserData) {
-    userData = { ...userData, ...data };
-    send(`${apiHost}/s/su`, { token, fields: userData });
-  }
+		if (referrer) {
+			referrer = null;
+			sessionStorage.setItem("seline:referrer", "set");
+		}
+	}
 
-  function registerCustomEventListeners() {
-    document.addEventListener("click", (event) => {
-      let targetElement = event.target as HTMLElement | null;
+	function setUser(data: SelineUserData) {
+		userData = { ...userData, ...data };
+		send(`${apiHost}/s/su`, { token, fields: userData });
+	}
 
-      if (
-        !targetElement ||
-        ((targetElement.tagName === "INPUT" ||
-          targetElement.tagName === "SELECT" ||
-          targetElement.tagName === "TEXTAREA") &&
-          // @ts-ignore
-          targetElement.type !== "submit")
-      ) {
-        return;
-      }
+	function registerCustomEventListeners() {
+		document.addEventListener("click", (event) => {
+			let targetElement = event.target as HTMLElement | null;
 
-      while (targetElement && !targetElement?.hasAttribute("data-sln-event")) {
-        targetElement = targetElement.parentElement;
-      }
+			if (
+				!targetElement ||
+				((targetElement.tagName === "INPUT" ||
+					targetElement.tagName === "SELECT" ||
+					targetElement.tagName === "TEXTAREA") &&
+					// @ts-ignore
+					targetElement.type !== "submit")
+			) {
+				return;
+			}
 
-      if (!targetElement) return;
+			while (targetElement && !targetElement?.hasAttribute("data-sln-event")) {
+				targetElement = targetElement.parentElement;
+			}
 
-      const eventName = targetElement.getAttribute("data-sln-event");
-      if (!eventName) return;
+			if (!targetElement) return;
 
-      const eventData = {};
+			const eventName = targetElement.getAttribute("data-sln-event");
+			if (!eventName) return;
 
-      for (const attr of Array.from(targetElement.attributes)) {
-        if (attr.name.startsWith("data-sln-event-") && attr.value) {
-          eventData[attr.name.slice("data-sln-event-".length)] = attr.value;
-        }
-      }
+			const eventData = {};
 
-      if (targetElement.tagName === "FORM") {
-        const form = targetElement as HTMLFormElement;
-        const inputs = Array.from(form.elements) as HTMLInputElement[];
-        for (const input of inputs) {
-          if (input.type !== "password" && input.name && input.value) {
-            eventData[input.name] = input.value;
-          }
-        }
-      }
+			for (const attr of Array.from(targetElement.attributes)) {
+				if (attr.name.startsWith("data-sln-event-") && attr.value) {
+					eventData[attr.name.slice("data-sln-event-".length)] = attr.value;
+				}
+			}
 
-      track(eventName, eventData);
-    });
-  }
+			if (targetElement.tagName === "FORM") {
+				const form = targetElement as HTMLFormElement;
+				const inputs = Array.from(form.elements) as HTMLInputElement[];
+				for (const input of inputs) {
+					if (input.type !== "password" && input.name && input.value) {
+						eventData[input.name] = input.value;
+					}
+				}
+			}
 
-  return {
-    track,
-    page,
-    setUser,
-    enableAutoPageView,
-    doNotTrack,
-  };
+			track(eventName, eventData);
+		});
+	}
+
+	return {
+		track,
+		page,
+		setUser,
+		enableAutoPageView,
+		doNotTrack,
+	};
 }
 
 const token = document.currentScript?.getAttribute("data-token");
 const skipPatterns =
-  document.currentScript?.getAttribute("data-skip-patterns")?.split(",") || [];
+	document.currentScript?.getAttribute("data-skip-patterns")?.split(",") || [];
 const maskPatterns =
-  document.currentScript?.getAttribute("data-mask-patterns")?.split(",") || [];
+	document.currentScript?.getAttribute("data-mask-patterns")?.split(",") || [];
 const autoPageView =
-  document.currentScript?.getAttribute("data-auto-page-view") !== "false";
+	document.currentScript?.getAttribute("data-auto-page-view") !== "false";
 const apiHost = document.currentScript?.getAttribute("data-api-host");
 
 const seline = Seline({
-  token,
-  skipPatterns,
-  maskPatterns,
-  autoPageView,
-  apiHost,
+	token,
+	skipPatterns,
+	maskPatterns,
+	autoPageView,
+	apiHost,
 });
 window.seline = seline;
 
