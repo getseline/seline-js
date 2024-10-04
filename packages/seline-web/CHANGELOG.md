@@ -1,5 +1,11 @@
 # @seline-analytics/web
 
+## 0.0.16
+
+### Patch Changes
+
+- Add pathname tracking for custom events
+
 ## 0.0.15
 
 ### Patch Changes

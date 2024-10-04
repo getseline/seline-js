@@ -8,6 +8,7 @@ type SelineOptions = {
 
 type SelineCustomEvent = {
 	name: string;
+	pathname?: string;
 	data?: Record<string, unknown> | null;
 };
 
@@ -191,11 +192,27 @@ export function track(
 	name: string,
 	data?: Record<string, unknown> | null,
 ): void {
+	let pathname: string | null | undefined = "";
+	if (window?.location?.pathname) {
+		pathname = processPathname(
+			window.location.pathname,
+			options.maskPatterns ?? [],
+			options.skipPatterns ?? [],
+		);
+	}
+
+	const args: SelineCustomEvent = {
+		name,
+		data,
+	};
+
+	if (pathname) args.pathname = pathname;
+
 	if (!inited) {
-		beforeInitQueue.push({ name: "event", args: { name, data } });
+		beforeInitQueue.push({ name: "event", args });
 		return;
 	}
-	createEvent({ name, data });
+	createEvent(args);
 }
 
 export function page() {
