@@ -1,5 +1,11 @@
 # @seline-analytics/web
 
+## 0.0.17
+
+### Patch Changes
+
+- Add cookie on identification option
+
 ## 0.0.16
 
 ### Patch Changes

@@ -4,6 +4,7 @@ type SelineOptions = {
 	autoPageView?: boolean | null;
 	skipPatterns?: string[];
 	maskPatterns?: string[];
+	cookieOnIdentify?: boolean | null;
 };
 
 type SelineCustomEvent = {
@@ -34,6 +35,8 @@ let inited = false;
 let lastPage: string | null = null;
 
 const beforeInitQueue: QueueEvent[] = [];
+
+const STORAGE_KEY = 'seline_vid';
 
 function processPathname(
 	pathname: string,
@@ -67,6 +70,9 @@ export function init(initOptions: SelineOptions = {}) {
 	options.autoPageView = initOptions.autoPageView ?? true;
 	options.skipPatterns = initOptions.skipPatterns ?? [];
 	options.maskPatterns = initOptions.maskPatterns ?? [];
+	options.cookieOnIdentify = initOptions.cookieOnIdentify ?? false;
+
+	userData = { userId: localStorage.getItem(STORAGE_KEY) as string | null };
 
 	inited = true;
 
@@ -166,21 +172,24 @@ export function enableAutoPageView(_initial = false) {
 	registerListeners();
 }
 
-function send(url: string, data: Record<string, unknown>): void {
+function send(url: string, data: Record<string, unknown>, useBeacon = true): Promise<Response | void> {
 	try {
 		const payload = data;
 		if (userData.userId) payload.visitorId = userData.userId;
 
-		if (!navigator?.sendBeacon(url, JSON.stringify(payload))) {
-			fetch(url, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify(payload),
-				keepalive: true,
-			});
+		if (useBeacon && navigator?.sendBeacon(url, JSON.stringify(payload))) {
+			return Promise.resolve();
 		}
+
+		return fetch(url, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify(payload),
+			keepalive: true,
+		});
 	} catch (error) {
 		console.error(error);
+		return Promise.reject(error);
 	}
 }
 
@@ -256,5 +265,17 @@ export function setUser(data: SelineUserData) {
 		return;
 	}
 
-	send(`${options.apiHost}/s/su`, { token: options.token, fields: userData });
+	send(`${options.apiHost}/s/su`, { token: options.token, fields: userData }, false)
+		.then(async (response) => {
+			if (response) {
+				const json = await response.json();
+				if (json?.visitorId) {
+					userData.userId = json.visitorId as string;
+					if (options.cookieOnIdentify) {
+						localStorage.setItem(STORAGE_KEY, userData.userId as string);
+					}
+				}
+			}
+		})
+		.catch(console.error);
 }
