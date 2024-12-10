@@ -4,6 +4,7 @@ type SelineOptions = {
 	autoPageView?: boolean | null;
 	maskPatterns?: string[] | null;
 	skipPatterns?: string[] | null;
+	cookieOnIdentify?: boolean | null;
 };
 
 type SelineCustomEvent = {
@@ -34,11 +35,14 @@ declare global {
 }
 
 export function Seline(options: SelineOptions) {
+	const STORAGE_KEY = 'seline_vid';
+
 	const token = options.token;
 	const apiHost = options.apiHost ?? "https://api.seline.so";
 	const maskPatterns = options.maskPatterns ?? [];
 	const skipPatterns = options.skipPatterns ?? [];
-	let userData: SelineUserData = {};
+  const cookieOnIdentify = options.cookieOnIdentify ?? false;
+	let userData: SelineUserData = { userId: localStorage.getItem(STORAGE_KEY) as string | null };
 	let lastPage: string | null = null;
 	const referrerSent = sessionStorage.getItem("seline:referrer");
 	let referrer: string | null = referrerSent ? "" : document.referrer;
@@ -102,28 +106,27 @@ export function Seline(options: SelineOptions) {
 		return pathname;
 	}
 
-	function send(url: string, data: Record<string, unknown>): void {
-		if (isTrackingDisabled()) return;
+	function send(url: string, data: Record<string, unknown>, useBeacon = true): Promise<Response | void> {
+		if (isTrackingDisabled()) return Promise.resolve();
 
-		try {
-			const payload = data;
-			if (userData.userId) payload.visitorId = userData.userId;
+		const payload = { ...data };
+		if (userData.userId) payload.visitorId = userData.userId;
 
-			if (!navigator?.sendBeacon(url, JSON.stringify(payload))) {
-				fetch(url, {
-					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify(payload),
-					keepalive: true,
-				});
-			}
-		} catch (error) {
-			console.error(error);
+		if (useBeacon && navigator?.sendBeacon) {
+			navigator.sendBeacon(url, JSON.stringify(payload));
+			return Promise.resolve();
 		}
+
+		return fetch(url, {
+			method: "POST",
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify(payload),
+			keepalive: true,
+		});
 	}
 
 	function createEvent(event: SelineCustomEvent | SelinePageViewEvent): void {
-		send(`${apiHost}/s/e`, { token, ...event });
+		send(`${apiHost}/s/e`, { token, ...event }, true);
 	}
 
 	function track(name: string, data?: Record<string, unknown> | null): void {
@@ -157,7 +160,16 @@ export function Seline(options: SelineOptions) {
 
 	function setUser(data: SelineUserData) {
 		userData = { ...userData, ...data };
-		send(`${apiHost}/s/su`, { token, fields: userData });
+		send(`${apiHost}/s/su`, { token, fields: userData }, false)
+			.then(async (response) => {
+				if (response) {
+					const json = await response.json();
+					if (json?.visitorId) {
+						userData.userId = json.visitorId as string;
+						if (cookieOnIdentify) localStorage.setItem(STORAGE_KEY, userData.userId as string);
+					}
+				}
+			});
 	}
 
 	function registerCustomEventListeners() {
@@ -223,6 +235,8 @@ const maskPatterns =
 const autoPageView =
 	document.currentScript?.getAttribute("data-auto-page-view") !== "false";
 const apiHost = document.currentScript?.getAttribute("data-api-host");
+const cookieOnIdentify =
+    document.currentScript?.getAttribute("data-cookie-on-identify") === "true";
 
 const seline = Seline({
 	token,
@@ -230,6 +244,7 @@ const seline = Seline({
 	maskPatterns,
 	autoPageView,
 	apiHost,
+	cookieOnIdentify,
 });
 window.seline = seline;
 
