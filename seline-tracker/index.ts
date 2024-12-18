@@ -227,25 +227,27 @@ export function Seline(options: SelineOptions) {
 	};
 }
 
-const token = document.currentScript?.getAttribute("data-token");
-const skipPatterns =
-	document.currentScript?.getAttribute("data-skip-patterns")?.split(",") || [];
-const maskPatterns =
-	document.currentScript?.getAttribute("data-mask-patterns")?.split(",") || [];
-const autoPageView =
-	document.currentScript?.getAttribute("data-auto-page-view") !== "false";
-const apiHost = document.currentScript?.getAttribute("data-api-host");
-const cookieOnIdentify =
+if (!window.seline) {
+  const token = document.currentScript?.getAttribute("data-token");
+  const skipPatterns =
+    document.currentScript?.getAttribute("data-skip-patterns")?.split(",") || [];
+  const maskPatterns =
+    document.currentScript?.getAttribute("data-mask-patterns")?.split(",") || [];
+  const autoPageView =
+    document.currentScript?.getAttribute("data-auto-page-view") !== "false";
+  const apiHost = document.currentScript?.getAttribute("data-api-host");
+  const cookieOnIdentify =
     document.currentScript?.getAttribute("data-cookie-on-identify") === "true";
 
-const seline = Seline({
-	token,
-	skipPatterns,
-	maskPatterns,
-	autoPageView,
-	apiHost,
-	cookieOnIdentify,
-});
-window.seline = seline;
+  const seline = Seline({
+    token,
+    skipPatterns,
+    maskPatterns,
+    autoPageView,
+    apiHost,
+    cookieOnIdentify,
+  });
+  window.seline = seline;
 
-if (autoPageView) seline.enableAutoPageView(true);
+  if (autoPageView) seline.enableAutoPageView(true);
+}
