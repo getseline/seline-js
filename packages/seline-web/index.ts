@@ -26,7 +26,7 @@ const isBrowser = typeof window !== "undefined";
 
 let userData: SelineUserData = {};
 let referrer: string | null = null;
-let visitorId: string | null = localStorage.getItem(STORAGE_KEY) as string | null;
+let visitorId: string | null = null;
 const options: SelineOptions = {};
 
 type QueueEvent =
@@ -73,6 +73,7 @@ export function init(initOptions: SelineOptions = {}) {
 	options.cookieOnIdentify = initOptions.cookieOnIdentify ?? false;
 
 	inited = true;
+  visitorId = localStorage.getItem(STORAGE_KEY) as string | null;
 
 	const referrerSent = sessionStorage.getItem("seline:referrer");
 	referrer = referrerSent ? "" : document.referrer;

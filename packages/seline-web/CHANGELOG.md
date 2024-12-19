@@ -1,5 +1,11 @@
 # @seline-analytics/web
 
+## 0.0.20
+
+### Patch Changes
+
+- Fix localStorage for server rendering
+
 ## 0.0.19
 
 ### Patch Changes
