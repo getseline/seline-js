@@ -42,7 +42,8 @@ export function Seline(options: SelineOptions) {
 	const maskPatterns = options.maskPatterns ?? [];
 	const skipPatterns = options.skipPatterns ?? [];
   const cookieOnIdentify = options.cookieOnIdentify ?? false;
-	let userData: SelineUserData = { userId: localStorage.getItem(STORAGE_KEY) as string | null };
+  let visitorId = localStorage.getItem(STORAGE_KEY) as string | null;
+	let userData: SelineUserData = {};
 	let lastPage: string | null = null;
 	const referrerSent = sessionStorage.getItem("seline:referrer");
 	let referrer: string | null = referrerSent ? "" : document.referrer;
@@ -111,6 +112,7 @@ export function Seline(options: SelineOptions) {
 
 		const payload = { ...data };
 		if (userData.userId) payload.visitorId = userData.userId;
+    if (visitorId) payload.visitorId = visitorId;
 
 		if (useBeacon && navigator?.sendBeacon) {
 			navigator.sendBeacon(url, JSON.stringify(payload));
@@ -165,8 +167,8 @@ export function Seline(options: SelineOptions) {
 				if (response) {
 					const json = await response.json();
 					if (json?.visitorId) {
-						userData.userId = json.visitorId as string;
-						if (cookieOnIdentify) localStorage.setItem(STORAGE_KEY, userData.userId as string);
+						visitorId = json.visitorId as string;
+						if (cookieOnIdentify) localStorage.setItem(STORAGE_KEY, visitorId as string);
 					}
 				}
 			});
