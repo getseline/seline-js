@@ -18,13 +18,15 @@ type SelinePageViewEvent = {
 	referrer?: string | null;
 };
 
+const STORAGE_KEY = 'seline_vid';
+
 type SelineUserData = Record<string, unknown>;
 
 const isBrowser = typeof window !== "undefined";
 
 let userData: SelineUserData = {};
 let referrer: string | null = null;
-
+let visitorId: string | null = localStorage.getItem(STORAGE_KEY) as string | null;
 const options: SelineOptions = {};
 
 type QueueEvent =
@@ -35,8 +37,6 @@ let inited = false;
 let lastPage: string | null = null;
 
 const beforeInitQueue: QueueEvent[] = [];
-
-const STORAGE_KEY = 'seline_vid';
 
 function processPathname(
 	pathname: string,
@@ -71,8 +71,6 @@ export function init(initOptions: SelineOptions = {}) {
 	options.skipPatterns = initOptions.skipPatterns ?? [];
 	options.maskPatterns = initOptions.maskPatterns ?? [];
 	options.cookieOnIdentify = initOptions.cookieOnIdentify ?? false;
-
-	userData = { userId: localStorage.getItem(STORAGE_KEY) as string | null };
 
 	inited = true;
 
@@ -175,7 +173,8 @@ export function enableAutoPageView(_initial = false) {
 function send(url: string, data: Record<string, unknown>, useBeacon = true): Promise<Response | void> {
 	try {
 		const payload = data;
-		if (userData.userId) payload.visitorId = userData.userId;
+    if (userData.userId) payload.visitorId = userData.userId;
+    if (visitorId) payload.visitorId = visitorId;
 
 		if (useBeacon && navigator?.sendBeacon(url, JSON.stringify(payload))) {
 			return Promise.resolve();
@@ -270,9 +269,9 @@ export function setUser(data: SelineUserData) {
 			if (response) {
 				const json = await response.json();
 				if (json?.visitorId) {
-					userData.userId = json.visitorId as string;
+					visitorId = json.visitorId as string;
 					if (options.cookieOnIdentify) {
-						localStorage.setItem(STORAGE_KEY, userData.userId as string);
+						localStorage.setItem(STORAGE_KEY, visitorId as string);
 					}
 				}
 			}

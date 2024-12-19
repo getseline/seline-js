@@ -1,5 +1,17 @@
 # @seline-analytics/web
 
+## 0.0.19
+
+### Patch Changes
+
+- Update visitorId sending
+
+## 0.0.18
+
+### Patch Changes
+
+- Separate visitorId and userId
+
 ## 0.0.17
 
 ### Patch Changes
