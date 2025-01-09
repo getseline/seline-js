@@ -1,10 +1,20 @@
-# seline-js
+<h1>Seline tracker and libs</h1>
+&nbsp;
+<div>
+  <a href="https://seline.so">
+    <img width="500" src="https://images.seline.so/seline-boxes.png" alt="Seline" />
+  </a>
+</div>
+&nbsp;
+<div>
+  <a href="https://seline.so"><strong>Seline</strong></a> is a cookieless, lightweight and independent analytics platform designed with privacy in mind. Get insights about your website and product usage without compromising user privacy.
+</div>
 
-## Release
+### Getting Started
 
-1. `pnpm changeset` - after each change to the package, you should run this command and write a brief description of the changes
-2. `pnpm changeset version` - when you decide you want to do a release, run this command. It will update the package versions based on the changes from step 1.
-3. `pnpm install` - this will update the lockfile and rebuild packages
-4. `git commit`
-4. `pnpm run build`
-5. `pnpm run publish`
+For detailed documentation, visit our [docs](https://seline.so/docs). Visit [seline.so](https://seline.so) to get started with Seline analytics.
+
+### Socials
+
+- [LinkedIn](https://www.linkedin.com/company/getseline)
+- [Twitter](https://twitter.com/getseline)
