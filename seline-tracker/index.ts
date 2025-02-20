@@ -22,7 +22,7 @@ type SelineUserData = Record<string, unknown>;
 
 export type Seline = {
 	track: (name: string, data?: Record<string, unknown> | null) => void;
-	page: () => void;
+	page: (customPathname?: string) => void;
 	setUser: (data: SelineUserData) => void;
 	enableAutoPageView: () => void;
 	doNotTrack: () => void;
@@ -63,7 +63,7 @@ export function Seline(options: SelineOptions) {
 			page();
 		};
 
-		addEventListener("popstate", page);
+		addEventListener("popstate", () => page());
 
 		function onVisibilityChange() {
 			if (!lastPage && document.visibilityState === "visible") {
@@ -138,19 +138,20 @@ export function Seline(options: SelineOptions) {
 		createEvent({ pathname: pathname + window.location.search, name, data });
 	}
 
-	function page() {
-		if (lastPage === window.location.pathname) return;
-		lastPage = window.location.pathname;
+	function page(customPathname?: string) {
+    const currentPathname = customPathname ?? window.location.pathname;
+		if (lastPage === currentPathname) return;
+		lastPage = currentPathname;
 
-		const pathname = processPathname(window.location.pathname);
+		const pathname = processPathname(currentPathname);
 		if (!pathname) return;
 
-		if (!referrer || referrer.includes(location.hostname)) {
+		if (!referrer || referrer.includes(window.location.hostname)) {
 			referrer = null;
 		}
 
 		createEvent({
-			pathname: pathname + window.location.search,
+			pathname: customPathname ? pathname : pathname + window.location.search,
 			referrer,
 		});
 
