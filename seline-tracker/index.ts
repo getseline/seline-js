@@ -232,10 +232,19 @@ export function Seline(options: SelineOptions) {
 
 if (!window.seline) {
   const token = document.currentScript?.getAttribute("data-token");
-  const skipPatterns =
-    document.currentScript?.getAttribute("data-skip-patterns")?.split(",") || [];
-  const maskPatterns =
-    document.currentScript?.getAttribute("data-mask-patterns")?.split(",") || [];
+
+  function parsePatterns(attrValue: string | null | undefined): string[] {
+    if (!attrValue) return [];
+    return attrValue
+      .replace(/^\[|\]$/g, "")
+      .split(",")
+      .map(p => p.trim().replace(/^['"]|['"]$/g, ""))
+      .filter(Boolean);
+  }
+
+  const skipPatterns = parsePatterns(document.currentScript?.getAttribute("data-skip-patterns"));
+  const maskPatterns = parsePatterns(document.currentScript?.getAttribute("data-mask-patterns"));
+
   const autoPageView =
     document.currentScript?.getAttribute("data-auto-page-view") !== "false";
   const apiHost = document.currentScript?.getAttribute("data-api-host");
