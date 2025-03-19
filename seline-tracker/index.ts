@@ -36,24 +36,38 @@ declare global {
 
 export function Seline(options: SelineOptions) {
 	const STORAGE_KEY = 'seline_vid';
+	const DNT_KEY = 'seline-do-not-track';
 
 	const token = options.token;
 	const apiHost = options.apiHost ?? "https://api.seline.so";
 	const maskPatterns = options.maskPatterns ?? [];
 	const skipPatterns = options.skipPatterns ?? [];
   const cookieOnIdentify = options.cookieOnIdentify ?? false;
-  let visitorId = localStorage.getItem(STORAGE_KEY) as string | null;
+
+  let visitorId = getCookie(STORAGE_KEY);
 	let userData: SelineUserData = {};
 	let lastPage: string | null = null;
 	const referrerSent = sessionStorage.getItem("seline:referrer");
 	let referrer: string | null = referrerSent ? "" : document.referrer;
 
+  function getCookie(name: string): string | null {
+    const match = document.cookie.match(new RegExp(`(^|;\\s*)${name}=([^;]*)`));
+    return match ? decodeURIComponent(match[2]) : null;
+  }
+
+  function setCookie(name: string, value: string, days = 365): void {
+    const date = new Date();
+    date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
+    const domain = location.hostname.split('.').slice(-2).join('.');
+    document.cookie = `${name}=${encodeURIComponent(value)};expires=${date.toUTCString()};path=/;domain=.${domain};SameSite=Lax`;
+  }
+
 	function isTrackingDisabled(): boolean {
-		return localStorage.getItem("seline-do-not-track") === "1";
+		return localStorage.getItem(DNT_KEY) === "1";
 	}
 
 	function doNotTrack(): void {
-		localStorage.setItem("seline-do-not-track", "1");
+		localStorage.setItem(DNT_KEY, "1");
 	}
 
 	function registerListeners() {
@@ -107,6 +121,7 @@ export function Seline(options: SelineOptions) {
 		return pathname;
 	}
 
+  // biome-ignore lint/suspicious/noConfusingVoidType: intentional
 	function send(url: string, data: Record<string, unknown>, useBeacon = true): Promise<Response | void> {
 		if (isTrackingDisabled()) return Promise.resolve();
 
@@ -169,7 +184,9 @@ export function Seline(options: SelineOptions) {
 					const json = await response.json();
 					if (json?.visitorId) {
 						visitorId = json.visitorId as string;
-						if (cookieOnIdentify) localStorage.setItem(STORAGE_KEY, visitorId as string);
+						if (cookieOnIdentify) {
+              setCookie(STORAGE_KEY, visitorId);
+            }
 					}
 				}
 			});
