@@ -38,6 +38,18 @@ let lastPage: string | null = null;
 
 const beforeInitQueue: QueueEvent[] = [];
 
+function getCookie(name: string): string | null {
+  const match = document.cookie.match(new RegExp(`(^|;\\s*)${name}=([^;]*)`));
+  return match ? decodeURIComponent(match[2] ?? "") : null;
+}
+
+function setCookie(name: string, value: string, days = 365): void {
+  const date = new Date();
+  date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
+  const domain = location.hostname.split('.').slice(-2).join('.');
+  document.cookie = `${name}=${encodeURIComponent(value)};expires=${date.toUTCString()};path=/;domain=.${domain};SameSite=Lax`;
+}
+
 function processPathname(
 	pathname: string,
 	maskPatterns: string[],
@@ -73,7 +85,7 @@ export function init(initOptions: SelineOptions = {}) {
 	options.cookieOnIdentify = initOptions.cookieOnIdentify ?? false;
 
 	inited = true;
-  visitorId = localStorage.getItem(STORAGE_KEY) as string | null;
+  visitorId = getCookie(STORAGE_KEY);
 
 	const referrerSent = sessionStorage.getItem("seline:referrer");
 	referrer = referrerSent ? "" : document.referrer;
@@ -171,6 +183,7 @@ export function enableAutoPageView(_initial = false) {
 	registerListeners();
 }
 
+// biome-ignore lint/suspicious/noConfusingVoidType: intentional
 function send(url: string, data: Record<string, unknown>, useBeacon = true): Promise<Response | void> {
 	try {
 		const payload = data;
@@ -272,7 +285,7 @@ export function setUser(data: SelineUserData) {
 				if (json?.visitorId) {
 					visitorId = json.visitorId as string;
 					if (options.cookieOnIdentify) {
-						localStorage.setItem(STORAGE_KEY, visitorId as string);
+						setCookie(STORAGE_KEY, visitorId as string);
 					}
 				}
 			}

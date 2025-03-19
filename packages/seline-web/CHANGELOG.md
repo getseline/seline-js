@@ -1,5 +1,11 @@
 # @seline-analytics/web
 
+## 1.0.0
+
+### Major Changes
+
+- Update cookieOnIdentify to use firstparty cookies instead of localStorage
+
 ## 0.0.20
 
 ### Patch Changes
