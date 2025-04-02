@@ -19,6 +19,7 @@ type SelinePageViewEvent = {
 };
 
 const STORAGE_KEY = 'seline_vid';
+const DNT_KEY = 'seline-do-not-track';
 
 type SelineUserData = Record<string, unknown>;
 
@@ -183,8 +184,18 @@ export function enableAutoPageView(_initial = false) {
 	registerListeners();
 }
 
+function isTrackingDisabled(): boolean {
+  return localStorage.getItem(DNT_KEY) === "1";
+}
+
+export function doNotTrack(): void {
+  localStorage.setItem(DNT_KEY, "1");
+}
+
 // biome-ignore lint/suspicious/noConfusingVoidType: intentional
 function send(url: string, data: Record<string, unknown>, useBeacon = true): Promise<Response | void> {
+	if (isTrackingDisabled()) return Promise.resolve();
+
 	try {
 		const payload = data;
     if (userData.userId) payload.visitorId = userData.userId;

@@ -1,5 +1,11 @@
 # @seline-analytics/web
 
+## 1.0.1
+
+### Patch Changes
+
+- Add DNT
+
 ## 1.0.0
 
 ### Major Changes
