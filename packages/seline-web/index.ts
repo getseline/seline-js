@@ -79,7 +79,7 @@ export function init(initOptions: SelineOptions = {}) {
 	if (!isBrowser || inited) return;
 
 	options.token = initOptions.token;
-	options.apiHost = initOptions.apiHost ?? "https://api.seline.so";
+	options.apiHost = initOptions.apiHost ?? "https://api.seline.com";
 	options.autoPageView = initOptions.autoPageView ?? true;
 	options.skipPatterns = initOptions.skipPatterns ?? [];
 	options.maskPatterns = initOptions.maskPatterns ?? [];

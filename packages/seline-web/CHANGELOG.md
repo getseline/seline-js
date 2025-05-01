@@ -1,5 +1,11 @@
 # @seline-analytics/web
 
+## 1.0.2
+
+### Patch Changes
+
+- Update API url
+
 ## 1.0.1
 
 ### Patch Changes
