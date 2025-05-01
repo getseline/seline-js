@@ -1,5 +1,11 @@
 # @seline-analytics/node
 
+## 1.0.0
+
+### Major Changes
+
+- Update API url
+
 ## 0.0.3
 
 ### Patch Changes

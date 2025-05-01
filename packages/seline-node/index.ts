@@ -16,7 +16,7 @@ type SelineUserData = {
 
 export function Seline(options: SelineOptions) {
 	const token = options.token;
-	const apiHost = options.apiHost ?? "https://api.seline.so";
+	const apiHost = options.apiHost ?? "https://api.seline.com";
 
 	function track(data: SelineCustomEvent): void {
 		send(`${apiHost}/s/e`, { token, visitorId: data.userId, ...data });
