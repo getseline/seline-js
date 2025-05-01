@@ -39,7 +39,7 @@ export function Seline(options: SelineOptions) {
 	const DNT_KEY = 'seline-do-not-track';
 
 	const token = options.token;
-	const apiHost = options.apiHost ?? "https://api.seline.so";
+	const apiHost = options.apiHost ?? "https://api.seline.com";
 	const maskPatterns = options.maskPatterns ?? [];
 	const skipPatterns = options.skipPatterns ?? [];
   const cookieOnIdentify = options.cookieOnIdentify ?? false;
