@@ -1,6 +1,6 @@
 # Seline Web
 
-This is a NodeJS library of [Seline analytics](https://seline.so).
+This is a NodeJS library of [Seline analytics](https://seline.com).
 
 ```
   npm install @seline-analytics/node

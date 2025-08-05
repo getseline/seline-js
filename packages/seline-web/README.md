@@ -1,6 +1,6 @@
 # Seline Web
 
-This is a JavaScript library of [Seline analytics](https://seline.so).
+This is a JavaScript library of [Seline analytics](https://seline.com).
 
 ```
 npm i @seline-analytics/web
