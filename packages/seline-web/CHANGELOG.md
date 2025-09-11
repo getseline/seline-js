@@ -1,5 +1,11 @@
 # @seline-analytics/web
 
+## 1.0.3
+
+### Patch Changes
+
+- Add cookie mode
+
 ## 1.0.2
 
 ### Patch Changes

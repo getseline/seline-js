@@ -5,6 +5,7 @@ type SelineOptions = {
 	skipPatterns?: string[];
 	maskPatterns?: string[];
 	cookieOnIdentify?: boolean | null;
+	cookie?: boolean | null;
 };
 
 type SelineCustomEvent = {
@@ -28,6 +29,7 @@ const isBrowser = typeof window !== "undefined";
 let userData: SelineUserData = {};
 let referrer: string | null = null;
 let visitorId: string | null = null;
+
 const options: SelineOptions = {};
 
 type QueueEvent =
@@ -84,6 +86,7 @@ export function init(initOptions: SelineOptions = {}) {
 	options.skipPatterns = initOptions.skipPatterns ?? [];
 	options.maskPatterns = initOptions.maskPatterns ?? [];
 	options.cookieOnIdentify = initOptions.cookieOnIdentify ?? false;
+	options.cookie = initOptions.cookie ?? false;
 
 	inited = true;
   visitorId = getCookie(STORAGE_KEY);
@@ -192,16 +195,26 @@ export function doNotTrack(): void {
   localStorage.setItem(DNT_KEY, "1");
 }
 
+export function enableCookieMode(): void {
+	options.cookie = true;
+	if (visitorId) {
+		setCookie(STORAGE_KEY, visitorId);
+	}
+}
+
 // biome-ignore lint/suspicious/noConfusingVoidType: intentional
 function send(url: string, data: Record<string, unknown>, useBeacon = true): Promise<Response | void> {
 	if (isTrackingDisabled()) return Promise.resolve();
 
 	try {
-		const payload = data;
-    if (userData.userId) payload.visitorId = userData.userId;
-    if (visitorId) payload.visitorId = visitorId;
+		const payload = { ...data };
+		if (userData.userId) payload.visitorId = userData.userId;
+		if (visitorId) payload.visitorId = visitorId;
 
-		if (useBeacon && navigator?.sendBeacon(url, JSON.stringify(payload))) {
+		const shouldUseFetch = !visitorId && options.cookie;
+
+		if (useBeacon && !shouldUseFetch && navigator?.sendBeacon) {
+			navigator.sendBeacon(url, JSON.stringify(payload));
 			return Promise.resolve();
 		}
 
@@ -210,6 +223,14 @@ function send(url: string, data: Record<string, unknown>, useBeacon = true): Pro
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify(payload),
 			keepalive: true,
+		}).then(async (response) => {
+			if (options.cookie && !visitorId && response.ok) {
+				const json = await response.json();
+				if (json?.visitorId) {
+					visitorId = json.visitorId as string;
+					setCookie(STORAGE_KEY, visitorId);
+				}
+			}
 		});
 	} catch (error) {
 		console.error(error);
@@ -295,7 +316,7 @@ export function setUser(data: SelineUserData) {
 				const json = await response.json();
 				if (json?.visitorId) {
 					visitorId = json.visitorId as string;
-					if (options.cookieOnIdentify) {
+					if (options.cookieOnIdentify || options.cookie) {
 						setCookie(STORAGE_KEY, visitorId as string);
 					}
 				}

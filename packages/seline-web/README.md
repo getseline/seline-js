@@ -31,6 +31,10 @@ seline.init({
   skipPatterns: ['/about', '/blog/*'];
   // Mask parts of pages that match provided patterns, wildcard * is supported
   maskPatterns: ['/customer/*/order/*'];
+  // Set a first-party cookie only on .setUser() call
+  cookieOnIdentify: false;
+  // Set a first-party cookie to every visitor
+  cookie: false;
 });
 ```
 
@@ -53,6 +57,13 @@ init() options:
   This works similarly to **skipPatterns**, but instead of skipping
   routes, it masks them and _tracks_ the masked value. Ideal if you want to mask
   routes with private IDs, like **/customer/\*/order/\***.
+
+- **cookieOnIdentify** - If you're using **setUser** to track your authorized
+  users, you can set cookieOnIdentify to true to automatically set an ID to
+  visitor's browser as a _first-party_ cookie when you identify them. This ID will
+  be used to track the user's activity across different sessions.
+- **cookie** - Set an ID to all visitors as a _first-party_ cookie. This ID will
+  be used to track the user's activity across different sessions.
 
 #### page
 
@@ -92,3 +103,7 @@ seline.setUser({
   credits: 140,
 });
 ```
+
+#### enableCookieMode
+
+Enables **cookie** mode and immediately sets a _first-party_ cookie to the visitor's browser.
