@@ -5,6 +5,7 @@ type SelineOptions = {
 	maskPatterns?: string[] | null;
 	skipPatterns?: string[] | null;
 	cookieOnIdentify?: boolean | null;
+	cookie?: boolean | null;
 };
 
 type SelineCustomEvent = {
@@ -26,6 +27,7 @@ export type Seline = {
 	setUser: (data: SelineUserData) => void;
 	enableAutoPageView: () => void;
 	doNotTrack: () => void;
+	enableCookieMode: () => void;
 };
 
 declare global {
@@ -43,6 +45,7 @@ export function Seline(options: SelineOptions) {
 	const maskPatterns = options.maskPatterns ?? [];
 	const skipPatterns = options.skipPatterns ?? [];
   const cookieOnIdentify = options.cookieOnIdentify ?? false;
+  let cookieMode = options.cookie ?? false;
 
   let visitorId = getCookie(STORAGE_KEY);
 	let userData: SelineUserData = {};
@@ -129,7 +132,9 @@ export function Seline(options: SelineOptions) {
 		if (userData.userId) payload.visitorId = userData.userId;
     if (visitorId) payload.visitorId = visitorId;
 
-		if (useBeacon && navigator?.sendBeacon) {
+		const shouldUseFetch = !visitorId && cookieMode;
+
+		if (useBeacon && !shouldUseFetch && navigator?.sendBeacon) {
 			navigator.sendBeacon(url, JSON.stringify(payload));
 			return Promise.resolve();
 		}
@@ -139,6 +144,14 @@ export function Seline(options: SelineOptions) {
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify(payload),
 			keepalive: true,
+		}).then(async (response) => {
+			if (cookieMode && !visitorId && response.ok) {
+        const json = await response.json();
+        if (json?.visitorId) {
+          visitorId = json.visitorId as string;
+          setCookie(STORAGE_KEY, visitorId);
+        }
+			}
 		});
 	}
 
@@ -184,7 +197,7 @@ export function Seline(options: SelineOptions) {
 					const json = await response.json();
 					if (json?.visitorId) {
 						visitorId = json.visitorId as string;
-						if (cookieOnIdentify) {
+						if (cookieOnIdentify || cookieMode) {
               setCookie(STORAGE_KEY, visitorId);
             }
 					}
@@ -238,12 +251,20 @@ export function Seline(options: SelineOptions) {
 		});
 	}
 
+	function enableCookieMode(): void {
+		cookieMode = true;
+		if (visitorId) {
+			setCookie(STORAGE_KEY, visitorId);
+		}
+	}
+
 	return {
 		track,
 		page,
 		setUser,
 		enableAutoPageView,
 		doNotTrack,
+		enableCookieMode,
 	};
 }
 
@@ -267,6 +288,8 @@ if (!window.seline) {
   const apiHost = document.currentScript?.getAttribute("data-api-host");
   const cookieOnIdentify =
     document.currentScript?.getAttribute("data-cookie-on-identify") === "true";
+  const cookie =
+    document.currentScript?.getAttribute("data-cookie") === "true";
 
   const seline = Seline({
     token,
@@ -275,6 +298,7 @@ if (!window.seline) {
     autoPageView,
     apiHost,
     cookieOnIdentify,
+    cookie,
   });
   window.seline = seline;
 
