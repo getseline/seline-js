@@ -6,6 +6,7 @@ type SelineOptions = {
 	skipPatterns?: string[] | null;
 	cookieOnIdentify?: boolean | null;
 	cookie?: boolean | null;
+	outbound?: boolean | null;
 };
 
 type SelineCustomEvent = {
@@ -46,6 +47,7 @@ export function Seline(options: SelineOptions) {
 	const skipPatterns = options.skipPatterns ?? [];
   const cookieOnIdentify = options.cookieOnIdentify ?? false;
   let cookieMode = options.cookie ?? false;
+  const outbound = options.outbound ?? false;
 
   let visitorId = getCookie(STORAGE_KEY);
 	let userData: SelineUserData = {};
@@ -220,6 +222,26 @@ export function Seline(options: SelineOptions) {
 				return;
 			}
 
+			if (outbound) {
+				let linkElement: HTMLElement | null = targetElement;
+				while (linkElement && linkElement.tagName !== "A") {
+					linkElement = linkElement.parentElement;
+				}
+
+				if (linkElement && linkElement.tagName === "A") {
+					const anchor = linkElement as HTMLAnchorElement;
+					const href = anchor.href;
+
+					if (href && anchor.hostname && anchor.hostname !== window.location.hostname) {
+						track("outbound link: clicked", {
+							url: href,
+							text: anchor.textContent?.trim() || "",
+							hostname: anchor.hostname
+						});
+					}
+				}
+			}
+
 			while (targetElement && !targetElement?.hasAttribute("data-sln-event")) {
 				targetElement = targetElement.parentElement;
 			}
@@ -290,6 +312,8 @@ if (!window.seline) {
     document.currentScript?.getAttribute("data-cookie-on-identify") === "true";
   const cookie =
     document.currentScript?.getAttribute("data-cookie") === "true";
+  const outbound =
+    document.currentScript?.getAttribute("data-outbound") === "true";
 
   const seline = Seline({
     token,
@@ -299,6 +323,7 @@ if (!window.seline) {
     apiHost,
     cookieOnIdentify,
     cookie,
+    outbound,
   });
   window.seline = seline;
 
