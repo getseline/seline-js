@@ -33,6 +33,10 @@ export type Seline = {
 
 declare global {
 	interface Window {
+		Cypress?: boolean;
+		__phantom?: boolean;
+		__nightmare?: boolean;
+		__seline?: boolean;
 		seline: Seline;
 	}
 }
@@ -129,6 +133,7 @@ export function Seline(options: SelineOptions) {
   // biome-ignore lint/suspicious/noConfusingVoidType: intentional
 	function send(url: string, data: Record<string, unknown>, useBeacon = true): Promise<Response | void> {
 		if (isTrackingDisabled()) return Promise.resolve();
+    if ((window.Cypress || window.__phantom || window.__nightmare || window.navigator.webdriver) && !window.__seline) return Promise.resolve();
 
 		const payload = { ...data };
 		if (userData.userId) payload.visitorId = userData.userId;
