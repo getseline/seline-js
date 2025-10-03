@@ -1,5 +1,11 @@
 # @seline-analytics/web
 
+## 1.0.4
+
+### Patch Changes
+
+- Add outbound tracking & custom api host settings
+
 ## 1.0.3
 
 ### Patch Changes

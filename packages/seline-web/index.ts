@@ -6,6 +6,7 @@ type SelineOptions = {
 	maskPatterns?: string[];
 	cookieOnIdentify?: boolean | null;
 	cookie?: boolean | null;
+	outbound?: boolean | null;
 };
 
 type SelineCustomEvent = {
@@ -19,6 +20,15 @@ type SelinePageViewEvent = {
 	referrer?: string | null;
 };
 
+declare global {
+	interface Window {
+		Cypress?: boolean;
+		__phantom?: boolean;
+		__nightmare?: boolean;
+		__seline?: boolean;
+	}
+}
+
 const STORAGE_KEY = 'seline_vid';
 const DNT_KEY = 'seline-do-not-track';
 
@@ -31,6 +41,10 @@ let referrer: string | null = null;
 let visitorId: string | null = null;
 
 const options: SelineOptions = {};
+
+const defaultApiHost = "https://api.seline.com";
+let eventEndpoint = `${defaultApiHost}/s/e`;
+let userEndpoint = `${defaultApiHost}/s/su`;
 
 type QueueEvent =
 	| { name: "event"; args: SelineCustomEvent | SelinePageViewEvent }
@@ -81,12 +95,20 @@ export function init(initOptions: SelineOptions = {}) {
 	if (!isBrowser || inited) return;
 
 	options.token = initOptions.token;
-	options.apiHost = initOptions.apiHost ?? "https://api.seline.com";
+
+	options.apiHost = initOptions.apiHost ?? defaultApiHost;
+
+  if (options.apiHost) {
+    eventEndpoint = `${options.apiHost}/ennui/blase`;
+    userEndpoint = `${options.apiHost}/ennui/su`;
+  }
+
 	options.autoPageView = initOptions.autoPageView ?? true;
 	options.skipPatterns = initOptions.skipPatterns ?? [];
 	options.maskPatterns = initOptions.maskPatterns ?? [];
 	options.cookieOnIdentify = initOptions.cookieOnIdentify ?? false;
 	options.cookie = initOptions.cookie ?? false;
+	options.outbound = initOptions.outbound ?? false;
 
 	inited = true;
   visitorId = getCookie(STORAGE_KEY);
@@ -123,6 +145,26 @@ function registerCustomEventListeners() {
 		) {
 			return;
 		}
+
+    if (options.outbound) {
+      let linkElement: HTMLElement | null = targetElement;
+      while (linkElement && linkElement.tagName !== "A") {
+        linkElement = linkElement.parentElement;
+      }
+
+      if (linkElement && linkElement.tagName === "A") {
+        const anchor = linkElement as HTMLAnchorElement;
+        const href = anchor.href;
+
+        if (href && anchor.hostname && anchor.hostname !== window.location.hostname) {
+          track("outbound link: clicked", {
+            url: href,
+            text: anchor.textContent?.trim() || "",
+            hostname: anchor.hostname
+          });
+        }
+      }
+    }
 
 		while (targetElement && !targetElement?.hasAttribute("data-sln-event")) {
 			targetElement = targetElement.parentElement;
@@ -205,6 +247,7 @@ export function enableCookieMode(): void {
 // biome-ignore lint/suspicious/noConfusingVoidType: intentional
 function send(url: string, data: Record<string, unknown>, useBeacon = true): Promise<Response | void> {
 	if (isTrackingDisabled()) return Promise.resolve();
+  if ((window.Cypress || window.__phantom || window.__nightmare || window.navigator.webdriver) && !window.__seline) return Promise.resolve();
 
 	try {
 		const payload = { ...data };
@@ -239,7 +282,7 @@ function send(url: string, data: Record<string, unknown>, useBeacon = true): Pro
 }
 
 function createEvent(event: SelineCustomEvent | SelinePageViewEvent): void {
-	send(`${options.apiHost}/s/e`, { token: options.token, ...event });
+	send(eventEndpoint, { token: options.token, ...event });
 }
 
 export function track(
@@ -310,7 +353,7 @@ export function setUser(data: SelineUserData) {
 		return;
 	}
 
-	send(`${options.apiHost}/s/su`, { token: options.token, fields: userData }, false)
+	send(userEndpoint, { token: options.token, fields: userData }, false)
 		.then(async (response) => {
 			if (response) {
 				const json = await response.json();
