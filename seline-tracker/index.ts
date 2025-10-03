@@ -45,8 +45,11 @@ export function Seline(options: SelineOptions) {
 	const STORAGE_KEY = 'seline_vid';
 	const DNT_KEY = 'seline-do-not-track';
 
-	const token = options.token;
 	const apiHost = options.apiHost ?? "https://api.seline.com";
+  const eventEndpoint = `${apiHost}${options.apiHost ? "/ennui/blase" : "/s/e"}`;
+  const userEndpoint = `${apiHost}${options.apiHost ? "/ennui/su" : "/s/su"}`;
+
+	const token = options.token;
 	const maskPatterns = options.maskPatterns ?? [];
 	const skipPatterns = options.skipPatterns ?? [];
   const cookieOnIdentify = options.cookieOnIdentify ?? false;
@@ -163,7 +166,7 @@ export function Seline(options: SelineOptions) {
 	}
 
 	function createEvent(event: SelineCustomEvent | SelinePageViewEvent): void {
-		send(`${apiHost}/s/e`, { token, ...event }, true);
+		send(eventEndpoint, { token, ...event }, true);
 	}
 
 	function track(name: string, data?: Record<string, unknown> | null): void {
@@ -198,7 +201,7 @@ export function Seline(options: SelineOptions) {
 
 	function setUser(data: SelineUserData) {
 		userData = { ...userData, ...data };
-		send(`${apiHost}/s/su`, { token, fields: userData }, false)
+		send(userEndpoint, { token, fields: userData }, false)
 			.then(async (response) => {
 				if (response) {
 					const json = await response.json();
