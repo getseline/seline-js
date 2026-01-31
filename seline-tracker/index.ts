@@ -26,10 +26,20 @@ export type Seline = {
 	track: (name: string, data?: Record<string, unknown> | null) => void;
 	page: (customPathname?: string) => void;
 	setUser: (data: SelineUserData) => void;
-	enableAutoPageView: () => void;
+	enableAutoPageView: (_initial?: boolean) => void;
 	doNotTrack: () => void;
 	enableCookieMode: () => void;
 };
+
+type SelineQueueItem = {
+    method: string | symbol;
+    args: any[];
+};
+
+type SelineProxy = {
+    queue: SelineQueueItem[];
+    [methodName: string]: any;
+}
 
 declare global {
 	interface Window {
@@ -37,11 +47,11 @@ declare global {
 		__phantom?: boolean;
 		__nightmare?: boolean;
 		__seline?: boolean;
-		seline: Seline;
+		seline: SelineProxy|Seline;
 	}
 }
 
-export function Seline(options: SelineOptions) {
+export function Seline(options: SelineOptions): Seline {
 	const STORAGE_KEY = 'seline_vid';
 	const DNT_KEY = 'seline-do-not-track';
 
@@ -298,7 +308,9 @@ export function Seline(options: SelineOptions) {
 	};
 }
 
-if (!window.seline) {
+if(!window.seline || ('queue' in window.seline)){
+  const queue = window.seline?.queue ?? [];
+
   const token = document.currentScript?.getAttribute("data-token");
 
   function parsePatterns(attrValue: string | null | undefined): string[] {
@@ -323,7 +335,7 @@ if (!window.seline) {
   const outbound =
     document.currentScript?.getAttribute("data-outbound") === "true";
 
-  const seline = Seline({
+  const selineInstance = Seline({
     token,
     skipPatterns,
     maskPatterns,
@@ -333,7 +345,13 @@ if (!window.seline) {
     cookie,
     outbound,
   });
-  window.seline = seline;
 
-  if (autoPageView) seline.enableAutoPageView(true);
+	while (queue.length > 0) {
+		const item = queue.shift();
+		if(item) (selineInstance as any)[item.method](...item.args);
+	}
+
+  window.seline = selineInstance;
+
+  if (autoPageView) selineInstance.enableAutoPageView(true);
 }
