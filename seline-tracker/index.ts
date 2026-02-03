@@ -33,12 +33,12 @@ export type Seline = {
 
 type SelineQueueItem = {
     method: string | symbol;
-    args: any[];
+    args: unknown[];
 };
 
 type SelineProxy = {
     queue: SelineQueueItem[];
-    [methodName: string]: any;
+    [methodName: string]: unknown;
 }
 
 declare global {
@@ -47,7 +47,7 @@ declare global {
 		__phantom?: boolean;
 		__nightmare?: boolean;
 		__seline?: boolean;
-		seline: SelineProxy|Seline;
+		seline: SelineProxy | Seline;
 	}
 }
 
@@ -308,7 +308,7 @@ export function Seline(options: SelineOptions): Seline {
 	};
 }
 
-if(!window.seline || ('queue' in window.seline)){
+if (!window.seline || ("queue" in window.seline)) {
   const queue = window.seline?.queue ?? [];
 
   const token = document.currentScript?.getAttribute("data-token");
@@ -348,7 +348,7 @@ if(!window.seline || ('queue' in window.seline)){
 
 	while (queue.length > 0) {
 		const item = queue.shift();
-		if(item) (selineInstance as any)[item.method](...item.args);
+		if(item) (selineInstance)[item.method](...item.args);
 	}
 
   window.seline = selineInstance;
