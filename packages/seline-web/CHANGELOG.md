@@ -1,5 +1,11 @@
 # @seline-analytics/web
 
+## 1.0.5
+
+### Patch Changes
+
+- Update readme @ web
+
 ## 1.0.4
 
 ### Patch Changes
