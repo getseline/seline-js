@@ -1,5 +1,11 @@
 # @seline-analytics/node
 
+## 1.0.1
+
+### Patch Changes
+
+- Update readme @ node
+
 ## 1.0.0
 
 ### Major Changes
