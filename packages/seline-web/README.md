@@ -1,6 +1,17 @@
-# Seline Web
+<h1>Seline Web</h1>
+&nbsp;
+<div>
+  <a href="https://seline.com">
+    <img width="500" src="https://images.seline.com/seline-boxes.png" alt="Seline" />
+  </a>
+</div>
+&nbsp;
+<div>
+  <a href="https://seline.com"><strong>Seline</strong></a> is a cookieless, lightweight and independent analytics platform designed with privacy in mind. Get insights about your website and product usage without compromising user privacy.
+</div>
+&nbsp;
 
-This is a JavaScript library of [Seline analytics](https://seline.com).
+This is Seline’s client-side JavaScript library.
 
 ```
 npm i @seline-analytics/web
