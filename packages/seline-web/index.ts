@@ -244,6 +244,12 @@ export function enableCookieMode(): void {
 	}
 }
 
+export function getVisitorId(): string | null {
+	if (visitorId) return visitorId;
+	visitorId = getCookie(STORAGE_KEY);
+	return visitorId;
+}
+
 // biome-ignore lint/suspicious/noConfusingVoidType: intentional
 function send(url: string, data: Record<string, unknown>, useBeacon = true): Promise<Response | void> {
 	if (isTrackingDisabled()) return Promise.resolve();
@@ -254,7 +260,7 @@ function send(url: string, data: Record<string, unknown>, useBeacon = true): Pro
 		if (userData.userId) payload.visitorId = userData.userId;
 		if (visitorId) payload.visitorId = visitorId;
 
-		const shouldUseFetch = !visitorId && options.cookie;
+		const shouldUseFetch = !visitorId;
 
 		if (useBeacon && !shouldUseFetch && navigator?.sendBeacon) {
 			navigator.sendBeacon(url, JSON.stringify(payload));
@@ -267,10 +273,11 @@ function send(url: string, data: Record<string, unknown>, useBeacon = true): Pro
 			body: JSON.stringify(payload),
 			keepalive: true,
 		}).then(async (response) => {
-			if (options.cookie && !visitorId && response.ok) {
-				const json = await response.json();
-				if (json?.visitorId) {
-					visitorId = json.visitorId as string;
+			if (!response.ok) return;
+			const json = await response.json();
+			if (json?.visitorId) {
+				visitorId = json.visitorId as string;
+				if (options.cookie) {
 					setCookie(STORAGE_KEY, visitorId);
 				}
 			}
@@ -354,15 +361,9 @@ export function setUser(data: SelineUserData) {
 	}
 
 	send(userEndpoint, { token: options.token, fields: userData }, false)
-		.then(async (response) => {
-			if (response) {
-				const json = await response.json();
-				if (json?.visitorId) {
-					visitorId = json.visitorId as string;
-					if (options.cookieOnIdentify || options.cookie) {
-						setCookie(STORAGE_KEY, visitorId as string);
-					}
-				}
+		.then(() => {
+			if (visitorId && options.cookieOnIdentify) {
+				setCookie(STORAGE_KEY, visitorId);
 			}
 		})
 		.catch(console.error);

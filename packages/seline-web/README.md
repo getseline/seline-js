@@ -118,3 +118,15 @@ seline.setUser({
 #### enableCookieMode
 
 Enables **cookie** mode and immediately sets a _first-party_ cookie to the visitor's browser.
+
+```
+seline.enableCookieMode();
+```
+
+#### getVisitorId
+
+Returns the current visitor ID, or **null** if cookie mode is off or the ID is not set yet.
+
+```
+const visitorId = seline.getVisitorId();
+```

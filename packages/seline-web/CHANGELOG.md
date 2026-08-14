@@ -1,5 +1,11 @@
 # @seline-analytics/web
 
+## 1.0.6
+
+### Patch Changes
+
+- Add getVisitorId method @ web
+
 ## 1.0.5
 
 ### Patch Changes
