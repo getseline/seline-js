@@ -29,6 +29,7 @@ export type Seline = {
 	enableAutoPageView: (_initial?: boolean) => void;
 	doNotTrack: () => void;
 	enableCookieMode: () => void;
+	getVisitorId: () => string | null;
 };
 
 type SelineQueueItem = {
@@ -152,7 +153,7 @@ export function Seline(options: SelineOptions): Seline {
 		if (userData.userId) payload.visitorId = userData.userId;
     if (visitorId) payload.visitorId = visitorId;
 
-		const shouldUseFetch = !visitorId && cookieMode;
+		const shouldUseFetch = !visitorId;
 
 		if (useBeacon && !shouldUseFetch && navigator?.sendBeacon) {
 			navigator.sendBeacon(url, JSON.stringify(payload));
@@ -165,13 +166,14 @@ export function Seline(options: SelineOptions): Seline {
 			body: JSON.stringify(payload),
 			keepalive: true,
 		}).then(async (response) => {
-			if (cookieMode && !visitorId && response.ok) {
-        const json = await response.json();
-        if (json?.visitorId) {
-          visitorId = json.visitorId as string;
+			if (!response.ok) return;
+      const json = await response.json();
+      if (json?.visitorId) {
+        visitorId = json.visitorId as string;
+        if (cookieMode) {
           setCookie(STORAGE_KEY, visitorId);
         }
-			}
+      }
 		});
 	}
 
@@ -212,16 +214,10 @@ export function Seline(options: SelineOptions): Seline {
 	function setUser(data: SelineUserData) {
 		userData = { ...userData, ...data };
 		send(userEndpoint, { token, fields: userData }, false)
-			.then(async (response) => {
-				if (response) {
-					const json = await response.json();
-					if (json?.visitorId) {
-						visitorId = json.visitorId as string;
-						if (cookieOnIdentify || cookieMode) {
-              setCookie(STORAGE_KEY, visitorId);
-            }
-					}
-				}
+			.then(() => {
+				if (visitorId && cookieOnIdentify) {
+          setCookie(STORAGE_KEY, visitorId);
+        }
 			});
 	}
 
@@ -298,6 +294,12 @@ export function Seline(options: SelineOptions): Seline {
 		}
 	}
 
+	function getVisitorId(): string | null {
+		if (visitorId) return visitorId;
+		visitorId = getCookie(STORAGE_KEY);
+		return visitorId;
+	}
+
 	return {
 		track,
 		page,
@@ -305,6 +307,7 @@ export function Seline(options: SelineOptions): Seline {
 		enableAutoPageView,
 		doNotTrack,
 		enableCookieMode,
+		getVisitorId,
 	};
 }
 
