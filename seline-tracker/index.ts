@@ -151,7 +151,7 @@ export function Seline(options: SelineOptions): Seline {
 
 		const payload = { ...data };
 		if (userData.userId) payload.visitorId = userData.userId;
-    if (visitorId) payload.visitorId = visitorId;
+    if (!payload.visitorId && visitorId) payload.visitorId = visitorId;
 
 		const shouldUseFetch = !visitorId;
 
